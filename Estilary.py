@@ -1,7 +1,9 @@
 import telebot
 from telebot import types
+import os  # Добавьте этот импорт
 
-BOT_TOKEN = "6212665492:AAGGXHAja5Zbg1raV78xYkDr4AOoAQAybJ8"
+# Получите токен из переменной окружения
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Устанавливаем команды для бота
