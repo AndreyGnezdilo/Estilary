@@ -1,92 +1,66 @@
 import telebot
 from telebot import types
-import os  # Добавьте этот импорт
+import os
 
-# Получите токен из переменной окружения
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Устанавливаем команды для бота
-bot.set_my_commands([
-    types.BotCommand("start", "Запустить бота")
-])
-
-# Создаем словарь для хранения данных пользователей
 user_data = {}
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    chat_id = message.chat.id
     user_id = message.from_user.id
-    
-    # Проверяем, есть ли информация о пользователе в словаре
     if user_id in user_data:
-        user_name = user_data[user_id]['name']
-        bot.send_message(chat_id, f"Добро пожаловать снова, {user_name}!")
-        bot.send_message(chat_id, "Если у Вас есть вопросы по товару, обращайтесь в телеграмм @besmartshop_01.")
+        bot.send_message(message.chat.id, "Рады что Вы с нами! Выберете интересующий Вас пункт меню.")
+        show_main_menu(message.chat.id)
     else:
-        bot.reply_to(message, "Здравствуйте!\n\nСпасибо за доверие к нашему бренду! Давайте знакомиться! Как вас зовут?")
+        greet_msg = "Привет! 👋\nСпасибо за покупку в нашем магазине! 🛍️\nДавайте знакомиться! Как вас зовут?"
+        bot.send_message(message.chat.id, greet_msg)
         bot.register_next_step_handler(message, handle_name)
 
+@bot.message_handler(content_types=['text'])
+def handle_text(message):
+    user_id = message.from_user.id
+    if user_id in user_data:
+        bot.send_message(message.chat.id, "Рады что Вы с нами! Выберете интересующий Вас пункт меню.")
+        show_main_menu(message.chat.id)
+
 def handle_name(message):
-    chat_id = message.chat.id
+    user_name = message.text
     user_id = message.from_user.id
-    user_name = message.text.strip()
-    user_data[user_id] = {'name': user_name, 'contact': None}
-    
-    # Отправляем персонализированное приветствие с именем пользователя
-    bot.send_message(chat_id, f"Очень приятно, {user_name}. У нас есть для вас подарок.")
-    bot.send_message(chat_id, "Мы не хотим быть одними из тех, кто отправляет пользователям сообщения, которых они не ожидают, поэтому, просим Вашего разрешения, чтобы вы поделились контактами с нами, "
-                              "чтобы в будущем мы могли радовать вас специальными предложениями.\n\nЕсли вы не против поделиться номером телефона нажмите Поделиться номером телефона.\n\nЕсли вы готовы разрешить делиться с Вами специальными предложениями только через телеграмм нажмите Только телеграмм")
-    request_contact_or_permission(chat_id)
+    user_data[user_id] = user_name
 
-def request_contact_or_permission(chat_id):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    item1 = types.KeyboardButton("Поделиться номером телефона", request_contact=True)
-    item2 = types.KeyboardButton("Только Телеграмм")
-    markup.add(item1, item2)
-    bot.send_message(chat_id, "Пожалуйста, выберите один из вариантов ниже:",
-                     reply_markup=markup)
+    bot.send_message(message.chat.id, f"Какое красивое имя, {user_name}! Рады знакомству. 🥳")
+    bot.send_message(message.chat.id, "У нас есть для вас подарок - электронная книга. Надеемся, вам понравится! 🎁")
+    
+    markup_gift = types.InlineKeyboardMarkup()
+    btn_gift = types.InlineKeyboardButton("Забрать подарок 🎁", callback_data="get_gift")
+    markup_gift.add(btn_gift)
+    bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы забрать ваш подарок:", reply_markup=markup_gift)
 
-@bot.message_handler(content_types=['contact'])
-def handle_contact(message):
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-    user_contact = message.contact.phone_number
-    user_nickname = message.from_user.username
+@bot.callback_query_handler(func=lambda call: call.data == "get_gift")
+def send_gift(call):
+    with open('/Users/enot/Documents/ESTILARY/Surfing_Illustrated.pdf', 'rb') as book:
+        bot.send_document(call.message.chat.id, book)
     
-    # Обновляем данные пользователя
-    user_data[user_id]['contact'] = user_contact
+    markup_subscribe = types.InlineKeyboardMarkup()
+    btn_subscribe = types.InlineKeyboardButton("Подписаться на канал 🚀", url="https://t.me/+RFGHFlCZT_kwZmNi")
+    markup_subscribe.add(btn_subscribe)
+    bot.send_message(call.message.chat.id, "Будем рады, если вы подпишитесь на наш телеграм-канал. Там мы публикуем информацию о новых коллекциях и предлагаем эксклюзивные скидки нашим покупателям. 🎉", reply_markup=markup_subscribe)
     
-    # Записываем данные в текстовый файл
-    with open('contacts.txt', 'a') as file:
-        file.write(f"User ID: {user_id}, User Name: {user_data[user_id]['name']}, "
-                   f"Phone Number: {user_contact}, User Nickname: {user_nickname}\n")
-    
-    # Отправляем PDF-файл
-    with open('/Users/enot/Documents/ESTILARY/Surfing_Illustrated.pdf', 'rb') as pdf_file:
-        bot.send_document(chat_id, pdf_file)
-    
-    # Отправляем сообщение благодарности
-    bot.send_message(chat_id, "Спасибо, что Вы с нами, надеемся Вам будет интересно!")
+    markup_feedback = types.InlineKeyboardMarkup()
+    btn_feedback = types.InlineKeyboardButton("Связаться с менеджером", url="https://t.me/besmartshop_01")
+    markup_feedback.add(btn_feedback)
+    bot.send_message(call.message.chat.id, "Если у вас есть вопросы по товару, нажмите на соответствующую кнопку:", reply_markup=markup_feedback)
 
-@bot.message_handler(func=lambda message: message.text == "Только Телеграмм")
-def handle_permission(message):
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-    user_nickname = message.from_user.username
-    
-    # Записываем никнейм пользователя в текстовый файл
-    with open('contacts.txt', 'a') as file:
-        file.write(f"User ID: {user_id}, User Name: {user_data[user_id]['name']}, "
-                   f"User Nickname: {user_nickname}\n")
-    
-    # Отправляем PDF-файл
-    with open('/Users/enot/Documents/ESTILARY/Surfing_Illustrated.pdf', 'rb') as pdf_file:
-        bot.send_document(chat_id, pdf_file)
-    
-    # Отправляем сообщение благодарности
-    bot.send_message(chat_id, "Спасибо, что Вы с нами, надеемся Вам будет интересно!")
+def show_main_menu(chat_id):
+    markup = types.InlineKeyboardMarkup()
+    btn_gift = types.InlineKeyboardButton("Забрать подарок 🎁", callback_data="get_gift")
+    btn_subscribe = types.InlineKeyboardButton("Подписаться на канал 🚀", url="https://t.me/+RFGHFlCZT_kwZmNi")
+    btn_feedback = types.InlineKeyboardButton("Связаться с менеджером", url="https://t.me/besmartshop_01")
+    markup.add(btn_gift)
+    markup.add(btn_subscribe)
+    markup.add(btn_feedback)
+    bot.send_message(chat_id, "Выберите интересующий вас пункт:", reply_markup=markup)
 
-# Запускаем бота
 bot.infinity_polling()
