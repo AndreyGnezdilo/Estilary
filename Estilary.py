@@ -2,65 +2,48 @@ import telebot
 from telebot import types
 import os
 
+# Замените это на ваш реальный токен бота
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
-user_data = {}
-
+# Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    user_id = message.from_user.id
-    if user_id in user_data:
-        bot.send_message(message.chat.id, "Рады что Вы с нами! Выберете интересующий Вас пункт меню.")
-        show_main_menu(message.chat.id)
-    else:
-        greet_msg = "Привет! 👋\nСпасибо за выбор нашего бренда! 🛍️\nДавайте знакомиться! Как вас зовут?"
-        bot.send_message(message.chat.id, greet_msg)
-        bot.register_next_step_handler(message, handle_name)
+    bot.send_message(message.chat.id, "Приветствуем вас! 🎈 Благодарим за доверие и покупку продукции бренда ESTILARY! Мы приготовили для вас подарки — познавательные и увлекательные электронные книги. Уверены, они подарят вам приятные минуты чтения! 📖")
+    bot.send_message(message.chat.id, "Надеемся, что вы остались довольны покупкой! Оставьте, пожалуйста, отзыв на Wildberries.")
+    send_book_format_options(message)
 
-@bot.message_handler(content_types=['text'])
-def handle_text(message):
-    user_id = message.from_user.id
-    if user_id in user_data:
-        bot.send_message(message.chat.id, "Рады что Вы с нами! Выберете интересующий Вас пункт меню.")
-        show_main_menu(message.chat.id)
+# Функция для отправки вариантов форматов книг
+def send_book_format_options(message):
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add('PDF', 'EPUB', 'FB2')
+    bot.send_message(message.chat.id, "Вот подборка интересных книг для вас. Выберите предпочитаемый формат для загрузки:", reply_markup=markup)
+    bot.register_next_step_handler(message, send_books)
 
-def handle_name(message):
-    user_name = message.text
-    user_id = message.from_user.id
-    user_data[user_id] = user_name
+# Функция для отправки книг в выбранном формате
+def send_books(message):
+    chosen_format = message.text
+    # Здесь код для отправки книг в выбранном формате
+    # Например, если выбран PDF:
+    if chosen_format == 'PDF':
+        send_books_in_pdf(message)
+    elif chosen_format == 'EPUB':
+        send_books_in_epub(message)
+    elif chosen_format == 'FB2':
+        send_books_in_fb2(message)
 
-    bot.send_message(message.chat.id, f"Какое красивое имя, {user_name}! Рады знакомству. 🥳")
-    bot.send_message(message.chat.id, "У нас есть для вас подарок - электронная книга. Надеемся, вам понравится! 🎁")
-    
-    markup_gift = types.InlineKeyboardMarkup()
-    btn_gift = types.InlineKeyboardButton("Забрать подарок 🎁", callback_data="get_gift")
-    markup_gift.add(btn_gift)
-    bot.send_message(message.chat.id, "Нажмите на кнопку ниже, чтобы забрать ваш подарок:", reply_markup=markup_gift)
+# Функции для отправки книг в разных форматах
+def send_books_in_pdf(message):
+    # Здесь код для отправки книг в формате PDF
+    pass
 
-@bot.callback_query_handler(func=lambda call: call.data == "get_gift")
-def send_gift(call):
-    with open('/Users/enot/Documents/ESTILARY/Surfing_Illustrated.pdf', 'rb') as book:
-        bot.send_document(call.message.chat.id, book)
-    
-    markup_subscribe = types.InlineKeyboardMarkup()
-    btn_subscribe = types.InlineKeyboardButton("Подписаться на канал 🚀", url="https://t.me/+RFGHFlCZT_kwZmNi")
-    markup_subscribe.add(btn_subscribe)
-    bot.send_message(call.message.chat.id, "Будем рады, если вы подпишитесь на наш телеграм-канал. Там мы публикуем информацию о новых коллекциях и предлагаем эксклюзивные скидки нашим покупателям. 🎉", reply_markup=markup_subscribe)
-    
-    markup_feedback = types.InlineKeyboardMarkup()
-    btn_feedback = types.InlineKeyboardButton("Связаться с менеджером", url="https://t.me/besmartshop_01")
-    markup_feedback.add(btn_feedback)
-    bot.send_message(call.message.chat.id, "Если у вас есть вопросы по товару, нажмите на кнопку ниже", reply_markup=markup_feedback)
+def send_books_in_epub(message):
+    # Здесь код для отправки книг в формате EPUB
+    pass
 
-def show_main_menu(chat_id):
-    markup = types.InlineKeyboardMarkup()
-    btn_gift = types.InlineKeyboardButton("Забрать подарок 🎁", callback_data="get_gift")
-    btn_subscribe = types.InlineKeyboardButton("Подписаться на канал 🚀", url="https://t.me/+RFGHFlCZT_kwZmNi")
-    btn_feedback = types.InlineKeyboardButton("Связаться с менеджером", url="https://t.me/besmartshop_01")
-    markup.add(btn_gift)
-    markup.add(btn_subscribe)
-    markup.add(btn_feedback)
-    bot.send_message(chat_id, "Выберите интересующий вас пункт:", reply_markup=markup)
+def send_books_in_fb2(message):
+    # Здесь код для отправки книг в формате FB2
+    pass
 
+# Запуск бота
 bot.infinity_polling()
