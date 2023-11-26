@@ -14,7 +14,7 @@ def send_welcome(message):
         bot.send_message(message.chat.id, "Рады что Вы с нами! Выберете интересующий Вас пункт меню.")
         show_main_menu(message.chat.id)
     else:
-        greet_msg = "Привет! 👋\nСпасибо за покупку в нашем магазине! 🛍️\nДавайте знакомиться! Как вас зовут?"
+        greet_msg = "Привет! 👋\nСпасибо за выбор нашего бренда! 🛍️\nДавайте знакомиться! Как вас зовут?"
         bot.send_message(message.chat.id, greet_msg)
         bot.register_next_step_handler(message, handle_name)
 
@@ -51,7 +51,7 @@ def send_gift(call):
     markup_feedback = types.InlineKeyboardMarkup()
     btn_feedback = types.InlineKeyboardButton("Связаться с менеджером", url="https://t.me/besmartshop_01")
     markup_feedback.add(btn_feedback)
-    bot.send_message(call.message.chat.id, "Если у вас есть вопросы по товару, нажмите на соответствующую кнопку:", reply_markup=markup_feedback)
+    bot.send_message(call.message.chat.id, "Если у вас есть вопросы по товару, нажмите на кнопку ниже", reply_markup=markup_feedback)
 
 def show_main_menu(chat_id):
     markup = types.InlineKeyboardMarkup()
